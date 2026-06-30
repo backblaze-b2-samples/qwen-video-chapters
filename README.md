@@ -13,6 +13,20 @@ It is built for e-learning platforms, documentary distributors, and enterprise
 training teams. **The vision model runs on-device — there is no second API key.
 Backblaze B2 credentials are the only secret you need.**
 
+## What it looks like
+
+**Dashboard** — chapterization metrics (videos, chapters, thumbnails, derived B2 artifacts), a per-day chapters chart, and a recent-chapterizations table.
+
+![Dashboard with chapterization metrics, per-day chart, and recent chapterizations](docs/images/dashboard.png)
+
+**Library** — the scoped B2-backed video library, each clip shown with its first keyframe thumbnail and a chapter-count badge.
+
+![Library grid of B2-backed videos with keyframe thumbnails and chapter-count badges](docs/images/library.png)
+
+**Video detail** — the per-video page with a B2-streamed player, an AI-generated chapter timeline with jump-to controls, keyframe thumbnails, and an editable summary.
+
+![Video detail page with player, chapter timeline, keyframe thumbnails, and summary](docs/images/library-detail.png)
+
 ## What it demonstrates
 
 **B2 is the storage layer for source video, extracted keyframes, and every
