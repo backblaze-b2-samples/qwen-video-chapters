@@ -1,0 +1,20 @@
+# Heavy ML / media stack for local Qwen2.5-VL chapter generation.
+#
+# Kept OUT of the core requirements.txt so the app, structural tests, lint and
+# the frontend build install fast and stay green WITHOUT this stack. The repo
+# adapters (repo/qwen_chapters.py, repo/keyframes.py) lazy-import everything
+# here inside functions, so `from main import app` works without it.
+#
+# Install when you actually want to run a chapterize:
+#   cd services/api && .venv/bin/pip install -r requirements-ml.txt
+#
+# Pins are bounded on purpose — unbounded torch/transformers is a false-green:
+# the app boots and tests pass, but the marquee feature breaks on a clean
+# install. Qwen2.5-VL landed in transformers 4.49.
+torch>=2.4,<2.9
+torchvision>=0.19,<0.24
+transformers>=4.49,<4.52
+qwen-vl-utils>=0.0.8,<0.1
+accelerate>=0.34,<1.5
+imageio-ffmpeg>=0.5.1,<0.7
+Pillow>=11.0.0
