@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     # Demo feasibility: cap the keyframes fed to the model and the max
     # chapters it may emit. Production would lift these + use a job queue/GPU.
     max_keyframes: int = 16
+    # Cap per-frame resolution handed to the vision encoder. Qwen2.5-VL's
+    # processor otherwise allows ~12.8M px/frame (thousands of vision tokens
+    # each) — a full-res 16-frame prompt then blows up MPS/GPU memory (OOM). A
+    # downscaled frame (~448px, up to 256 vision tokens) is plenty to identify a
+    # scene for chaptering. Raise it if you have headroom and want more detail.
+    qwen_max_pixels: int = 256 * 28 * 28
 
     # Small durable counters (downloads, etc). Point at a persistent
     # volume in production if you care about surviving restarts.

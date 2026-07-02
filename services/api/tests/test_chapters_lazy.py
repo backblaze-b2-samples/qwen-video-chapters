@@ -69,3 +69,14 @@ def test_parse_model_json_rejects_garbage():
 
     with pytest.raises(ValueError):
         parse_model_json("not json at all")
+
+
+def test_dtype_name_is_fp16_on_gpu_backends_fp32_on_cpu():
+    """GPU-class backends load in float16 to halve memory (avoids MPS OOM);
+    CPU stays float32. Pure — no torch required."""
+    from app.repo.qwen_chapters import dtype_name_for_device
+
+    assert dtype_name_for_device("cuda") == "float16"
+    assert dtype_name_for_device("mps") == "float16"
+    assert dtype_name_for_device("cpu") == "float32"
+    assert dtype_name_for_device("") == "float32"

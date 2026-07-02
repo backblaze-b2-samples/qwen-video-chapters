@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-30 -->
+<!-- last_verified: 2026-07-02 -->
 # Feature: Chapter Generation (Qwen2.5-VL, local)
 
 ## Purpose
@@ -37,7 +37,13 @@ boundaries, titles, and a summary — the marquee capability of this app.
 - The ML stack (torch / transformers / qwen_vl_utils) is **lazy-imported inside
   the function** so the app stays importable without it.
 - Device autodetect (override with `QWEN_DEVICE`); `torch_dtype` is float16 on
-  CUDA, float32 elsewhere. Loading on MPS that fails falls back to CPU.
+  GPU-class backends (CUDA **and** Apple MPS) to halve memory, float32 on CPU.
+  Loading on MPS that fails falls back to CPU.
+- Per-frame resolution is capped at `QWEN_MAX_PIXELS` (default `256*28*28`,
+  ~448px) before the vision encoder — a full-res 16-frame prompt would
+  otherwise explode the vision-token count and OOM on MPS/GPU. On MPS the
+  allocation pool is released (`torch.mps.empty_cache()`) before each run so
+  re-runs don't accumulate toward the memory ceiling.
 - A single multi-image chat message is built (each frame tagged with its
   timestamp) + the optional transcript; the model is asked for a JSON object.
 - The output JSON is parsed defensively and coerced into `Chapter` models.

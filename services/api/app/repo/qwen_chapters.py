@@ -48,20 +48,34 @@ def select_device(override: str = "") -> str:
     return "cpu"
 
 
+def dtype_name_for_device(device: str) -> str:
+    """Pick the torch dtype (by name) for a device.
+
+    float16 on GPU-class backends (CUDA / Apple MPS) to halve weight +
+    activation memory and avoid OOM; float32 on CPU where fp16 is slow and many
+    ops are unsupported. Pure + unit-testable without torch installed.
+    """
+    return "float16" if device in ("cuda", "mps") else "float32"
+
+
 @functools.lru_cache(maxsize=1)
 def _load_model(model_id: str, device: str):
     """Load + cache the model and processor once. Heavy imports live here."""
     import torch
     from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
-    dtype = torch.float16 if device == "cuda" else torch.float32
+    dtype = getattr(torch, dtype_name_for_device(device))
     logger.info("Loading Qwen2.5-VL model=%s device=%s dtype=%s", model_id, device, dtype)
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype=dtype
     )
     model = model.to(device)
     model.eval()
-    processor = AutoProcessor.from_pretrained(model_id)
+    # Cap per-frame resolution so a full-res keyframe sequence can't explode the
+    # vision-token count (and MPS/GPU memory). See settings.qwen_max_pixels.
+    processor = AutoProcessor.from_pretrained(
+        model_id, max_pixels=settings.qwen_max_pixels
+    )
     return model, processor
 
 
@@ -148,6 +162,10 @@ def generate(
         return_tensors="pt",
     ).to(device)
 
+    # Release any pool retained from a prior run so a re-run starts from a clean
+    # MPS allocation ceiling rather than accumulating toward OOM.
+    if device == "mps":
+        torch.mps.empty_cache()
     with torch.no_grad():
         generated = model.generate(**inputs, max_new_tokens=1024, do_sample=False)
     trimmed = [
