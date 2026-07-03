@@ -26,6 +26,7 @@ import { useDeleteVideo, useVideo } from "@/lib/queries";
 import { VideoPlayer } from "./video-player";
 import { ChapterTimeline } from "./chapter-timeline";
 import { SummaryPanel } from "./summary-panel";
+import { KeyframeStrip } from "./keyframe-strip";
 import { ChapterEditor } from "./chapter-editor";
 import { RunChaptersForm } from "./run-chapters-form";
 
@@ -103,6 +104,7 @@ export function VideoDetail({ videoId }: { videoId: string }) {
             posterKey={video?.thumbnail_keys?.[0]}
           />
           {video && <SummaryPanel video={video} />}
+          {video && <KeyframeStrip thumbnailKeys={video.thumbnail_keys} />}
         </div>
         <div>
           {isLoading ? (

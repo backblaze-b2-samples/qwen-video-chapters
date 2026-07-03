@@ -94,7 +94,12 @@ async def run_defaults(video_id: str):
 
 
 @router.post("/library/{video_id}/chapterize", response_model=VideoChapters)
-async def chapterize_video(video_id: str, req: ChapterizeRequest):
+def chapterize_video(video_id: str, req: ChapterizeRequest):
+    # Declared `def` (not `async def`) on purpose: chapters_service.chapterize is
+    # a synchronous, CPU-bound run (real torch inference). FastAPI runs sync route
+    # handlers in a threadpool, so this heavy work stays OFF the event loop and
+    # concurrent requests aren't blocked for the duration of the run. The caller's
+    # view is unchanged — the request still returns the VideoChapters when done.
     try:
         return chapters_service.chapterize(video_id, req)
     except LibraryError as e:
