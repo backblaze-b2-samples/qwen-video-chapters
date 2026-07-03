@@ -13,6 +13,7 @@ import {
   chapterizeVideo,
   deleteVideo,
   editChapters,
+  getChapterizeProgress,
   getLibrary,
   getLibraryActivity,
   getLibraryRecent,
@@ -50,6 +51,7 @@ export const qk = {
   libraryActivity: () => [...qk.all, "library", "activity"] as const,
   videoSourceUrl: (id: string) => [...qk.all, "library", "source-url", id] as const,
   thumbUrl: (key: string) => [...qk.all, "library", "thumb-url", key] as const,
+  chapterizeProgress: (id: string) => [...qk.all, "library", "chapterize-progress", id] as const,
 };
 
 export function useFiles(prefix = "", limit = 100) {
@@ -151,6 +153,16 @@ export function useThumbUrl(key: string | undefined, enabled: boolean) {
     queryFn: () => getThumbUrl(key as string),
     enabled: enabled && !!key,
     staleTime: 60_000,
+  });
+}
+
+export function useChapterizeProgress(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.chapterizeProgress(id),
+    queryFn: () => getChapterizeProgress(id),
+    enabled,
+    refetchInterval: 1000,
+    retry: false,
   });
 }
 

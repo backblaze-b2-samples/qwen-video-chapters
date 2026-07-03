@@ -10,6 +10,7 @@ from app.service import library as library_service
 from app.service.library import LibraryError
 from app.types import (
     ChapterEdit,
+    ChapterizeProgress,
     ChapterizeRequest,
     ChapterTimePoint,
     LibraryStats,
@@ -93,6 +94,14 @@ async def run_defaults(video_id: str):
     return chapters_service.default_request_for(video_id)
 
 
+@router.get("/library/{video_id}/chapterize-progress", response_model=ChapterizeProgress)
+async def chapterize_progress(video_id: str):
+    prog = chapters_service.get_progress(video_id)
+    if not prog:
+        raise HTTPException(status_code=404, detail="No chapterize in progress")
+    return ChapterizeProgress(**prog)
+
+
 @router.post("/library/{video_id}/chapterize", response_model=VideoChapters)
 def chapterize_video(video_id: str, req: ChapterizeRequest):
     # Declared `def` (not `async def`) on purpose: chapters_service.chapterize is
@@ -107,6 +116,8 @@ def chapterize_video(video_id: str, req: ChapterizeRequest):
     except RuntimeError as e:
         logger.warning("Chapterize failed for %s: %s", video_id, e)
         raise HTTPException(status_code=500, detail=str(e)) from None
+    finally:
+        chapters_service.clear_progress(video_id)
 
 
 @router.patch("/library/{video_id}", response_model=VideoChapters)

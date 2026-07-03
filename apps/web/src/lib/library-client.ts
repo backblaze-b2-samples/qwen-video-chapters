@@ -1,5 +1,6 @@
 import type {
   ChapterEdit,
+  ChapterizeProgress,
   ChapterizeRequest,
   ChapterTimePoint,
   LibraryStats,
@@ -73,6 +74,12 @@ export async function getVideoSourceUrl(videoId: string) {
 export async function getThumbUrl(key: string) {
   return apiFetch<{ url: string }>(
     `/library/thumb-url?key=${encodeURIComponent(key)}`,
+  );
+}
+
+export async function getChapterizeProgress(videoId: string): Promise<ChapterizeProgress> {
+  return apiFetch<ChapterizeProgress>(
+    `/library/${encodeURIComponent(videoId)}/chapterize-progress`,
   );
 }
 

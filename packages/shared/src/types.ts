@@ -124,3 +124,8 @@ export interface ChapterTimePoint {
   date: string;
   chapters: number;
 }
+
+export interface ChapterizeProgress {
+  stage: string;
+  detail: string;
+}

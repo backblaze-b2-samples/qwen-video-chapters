@@ -64,9 +64,13 @@ export function AddVideoForm({ open, onOpenChange }: AddVideoFormProps) {
         file: values.file,
         onProgress: setProgress,
       });
-      toast.success(`Added "${video.title}" to the library`, {
-        description: "Open it and run Chapterize to generate chapters.",
-      });
+      const wasReplaced = video.has_meta || video.chapter_count > 0;
+      toast.success(
+        wasReplaced
+          ? `Replaced existing video "${video.title}" in the library`
+          : `Added "${video.title}" to the library`,
+        { description: "Open it and run Chapterize to generate chapters." },
+      );
       form.reset();
       setProgress(null);
       onOpenChange(false);

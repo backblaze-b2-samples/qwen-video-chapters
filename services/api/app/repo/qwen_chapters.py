@@ -16,6 +16,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+_loaded_models: set[str] = set()
+
 _PROMPT = (
     "You are a video-chaptering assistant. You are given an ordered sequence of "
     "keyframes sampled from a single video; each frame is labelled with its "
@@ -76,7 +78,46 @@ def _load_model(model_id: str, device: str):
     processor = AutoProcessor.from_pretrained(
         model_id, max_pixels=settings.qwen_max_pixels
     )
+    _loaded_models.add(model_id)
     return model, processor
+
+
+def model_load_stage(model_id: str) -> str:
+    """Return the progress stage key appropriate for loading this model.
+
+    Returns 'downloading_model' when the weights are not yet cached locally,
+    or 'loading_model' when they are (either in the lru_cache or on disk).
+    """
+    if model_id in _loaded_models:
+        return "loading_model"
+    try:
+        from huggingface_hub import try_to_load_from_cache
+
+        cached = try_to_load_from_cache(model_id, "config.json")
+        if cached is not None:
+            return "loading_model"
+    except Exception:
+        pass
+    return "downloading_model"
+
+
+def ensure_loaded(model_id: str | None = None) -> None:
+    """Pre-load the model into the lru_cache.
+
+    Called from the service layer between the load stage and inference stage so
+    the stage label correctly transitions from 'loading_model' to 'inference'
+    before the actual generation run (which would otherwise be label-less).
+    """
+    mid = model_id or settings.qwen_model_id
+    device = select_device(settings.qwen_device)
+    try:
+        _load_model(mid, device)
+    except (RuntimeError, NotImplementedError) as e:
+        if device != "cpu":
+            logger.warning("Pre-load on %s failed (%s); retrying on CPU", device, e)
+            _load_model(mid, "cpu")
+        else:
+            raise
 
 
 def _build_messages(

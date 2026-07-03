@@ -1,6 +1,7 @@
 from app.types.chapters import (
     Chapter,
     ChapterEdit,
+    ChapterizeProgress,
     ChapterizeRequest,
     ChapterTimePoint,
     LibraryStats,
@@ -18,6 +19,7 @@ __all__ = [
     "Chapter",
     "ChapterEdit",
     "ChapterTimePoint",
+    "ChapterizeProgress",
     "ChapterizeRequest",
     "DailyUploadCount",
     "ErrorResponse",

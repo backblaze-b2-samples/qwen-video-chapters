@@ -85,3 +85,10 @@ class ChapterTimePoint(BaseModel):
 
     date: str
     chapters: int
+
+
+class ChapterizeProgress(BaseModel):
+    """Live progress report for an in-flight chapterize run."""
+
+    stage: str
+    detail: str

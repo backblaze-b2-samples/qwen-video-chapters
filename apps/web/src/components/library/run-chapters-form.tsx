@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GeneratingLoader } from "@/components/ui/generating-loader";
-import { useChapterize, useRunDefaults } from "@/lib/queries";
+import { useChapterize, useChapterizeProgress, useRunDefaults } from "@/lib/queries";
 
 const MODEL_OPTIONS = [
   { value: "Qwen/Qwen2.5-VL-3B-Instruct", label: "Qwen2.5-VL 3B (default, ungated)" },
@@ -42,6 +42,7 @@ interface RunChaptersFormProps {
 export function RunChaptersForm({ videoId, open, onOpenChange }: RunChaptersFormProps) {
   const { data: defaults } = useRunDefaults(videoId, open);
   const chapterize = useChapterize(videoId);
+  const { data: progress } = useChapterizeProgress(videoId, chapterize.isPending);
 
   // User overrides start undefined; we fall back to the video's last-used
   // settings (or defaults) so the form opens pre-filled WITHOUT a setState
@@ -89,10 +90,11 @@ export function RunChaptersForm({ videoId, open, onOpenChange }: RunChaptersForm
 
         {chapterize.isPending ? (
           <div className="flex flex-col items-center gap-3 py-8">
-            <GeneratingLoader size="lg" label="Generating chapters..." />
+            <GeneratingLoader size="lg" label={progress?.detail ?? "Generating chapters…"} />
             <p className="max-w-xs text-center text-xs text-muted-foreground">
-              On first run the model downloads (a few GB) and runs on-device.
-              This can take a while on CPU.
+              {progress?.stage === "downloading_model"
+                ? "Downloading model weights (~3 GB on first run). Grab a coffee — this only happens once."
+                : "Running on-device. On CPU this takes a minute or two."}
             </p>
           </div>
         ) : (

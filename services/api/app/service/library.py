@@ -7,6 +7,7 @@ source/thumbs/meta + manifest rebuild). All B2 access goes through repo/.
 """
 
 import logging
+import os
 import re
 
 from app.config import settings
@@ -133,13 +134,31 @@ def ingest_video(file_data: bytes, filename: str, content_type: str) -> LibraryV
     if len(file_data) > settings.max_file_size:
         raise LibraryError("File too large for browser ingest", status_code=413)
     video_id = derive_video_id(filename)
+    existing_key = find_source_key(video_id)
+    was_replaced = existing_key is not None
     key = source_key(video_id, ext)
     put_bytes(key, file_data, content_type or "video/mp4")
-    logger.info("Ingested library video: key=%s size=%d", key, len(file_data))
+    logger.info(
+        "Ingested library video: key=%s size=%d replaced=%s",
+        key, len(file_data), was_replaced,
+    )
     rows = list_videos()
+    stored_title = os.path.basename(key)
     for r in rows:
         if r.video_id == video_id:
-            return r
+            # Always use the actual stored B2 filename so the caller gets the
+            # canonical name — manifest title may be stale from a prior
+            # chapterization run and would produce a misleading toast.
+            return LibraryVideo(
+                video_id=r.video_id,
+                source_key=r.source_key,
+                title=stored_title,
+                size_human=r.size_human,
+                chapter_count=r.chapter_count,
+                has_meta=r.has_meta,
+                uploaded_at=r.uploaded_at,
+                thumbnail_key=r.thumbnail_key,
+            )
     raise LibraryError("Ingest succeeded but video not found in listing", 500)
 
 

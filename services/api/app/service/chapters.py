@@ -9,6 +9,7 @@ demo; production would use a job queue + GPU for multi-hour videos.
 import logging
 import os
 import tempfile
+import threading
 from datetime import UTC, datetime
 
 from app.config import settings
@@ -30,6 +31,34 @@ from app.types import (
 )
 
 logger = logging.getLogger(__name__)
+
+_progress: dict[str, dict] = {}
+_progress_lock = threading.Lock()
+
+_STAGE_LABELS: dict[str, str] = {
+    "downloading_video": "Downloading video from B2…",
+    "extracting_keyframes": "Extracting keyframes…",
+    "uploading_thumbnails": "Uploading thumbnails…",
+    "downloading_model": "Downloading model weights (~GB, first run)…",
+    "loading_model": "Loading model into memory…",
+    "inference": "Running Qwen2.5-VL inference…",
+    "saving": "Saving chapters…",
+}
+
+
+def _set_stage(video_id: str, stage: str) -> None:
+    with _progress_lock:
+        _progress[video_id] = {"stage": stage, "detail": _STAGE_LABELS.get(stage, stage)}
+
+
+def get_progress(video_id: str) -> dict | None:
+    with _progress_lock:
+        return _progress.get(video_id)
+
+
+def clear_progress(video_id: str) -> None:
+    with _progress_lock:
+        _progress.pop(video_id, None)
 
 
 def _thumb_key(video_id: str, idx: int) -> str:
@@ -66,9 +95,11 @@ def chapterize(video_id: str, req: ChapterizeRequest) -> VideoChapters:
     ext = src_key[src_key.rfind(".") :]
     with tempfile.TemporaryDirectory(prefix=f"qvc-{video_id}-") as tmp:
         local_video = os.path.join(tmp, f"source{ext}")
+        _set_stage(video_id, "downloading_video")
         download_to_path(src_key, local_video)
 
         frame_dir = os.path.join(tmp, "frames")
+        _set_stage(video_id, "extracting_keyframes")
         pairs = keyframes.extract(
             local_video,
             frame_dir,
@@ -80,6 +111,7 @@ def chapterize(video_id: str, req: ChapterizeRequest) -> VideoChapters:
         duration = keyframes.probe_duration(local_video)
 
         thumb_keys: list[str] = []
+        _set_stage(video_id, "uploading_thumbnails")
         derived_size = 0
         for idx, (_, path) in enumerate(pairs):
             with open(path, "rb") as fh:
@@ -90,6 +122,10 @@ def chapterize(video_id: str, req: ChapterizeRequest) -> VideoChapters:
             derived_size += len(data)
 
         transcript = library.read_transcript(video_id)
+        mid = req.model_id or settings.qwen_model_id
+        _set_stage(video_id, qwen_chapters.model_load_stage(mid))
+        qwen_chapters.ensure_loaded(req.model_id)
+        _set_stage(video_id, "inference")
         raw = qwen_chapters.generate(
             pairs,
             duration_sec=duration,
@@ -99,6 +135,7 @@ def chapterize(video_id: str, req: ChapterizeRequest) -> VideoChapters:
         )
 
     chapters, summary = _coerce_chapters(raw, duration)
+    _set_stage(video_id, "saving")
     meta = VideoChapters(
         video_id=video_id,
         source_key=src_key,
