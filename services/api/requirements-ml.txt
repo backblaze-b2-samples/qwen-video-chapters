@@ -11,9 +11,9 @@
 # Pins are bounded on purpose — unbounded torch/transformers is a false-green:
 # the app boots and tests pass, but the marquee feature breaks on a clean
 # install. Qwen2.5-VL landed in transformers 4.49.
-torch>=2.4,<2.9
-torchvision>=0.19,<0.24
-transformers>=4.49,<4.52
+torch>=2.13,<2.14
+torchvision>=0.28,<0.29
+transformers>=5.5,<6
 qwen-vl-utils>=0.0.8,<0.1
 accelerate>=0.34,<1.5
 imageio-ffmpeg>=0.5.1,<0.7
