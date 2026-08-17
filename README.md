@@ -89,7 +89,7 @@ machine** — no inference API, no per-call cost.
 
 ## Quick Start
 
-You need: Node.js >= 20, pnpm >= 9, Python >= 3.11, and a free
+You need: Node.js >= 20.19.0, pnpm >= 9, Python >= 3.11, and a free
 **[Backblaze B2 account](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-qwen-video-chapters)**.
 
 **1. Install dependencies**

@@ -10,7 +10,8 @@
 #
 # Pins are bounded on purpose — unbounded torch/transformers is a false-green:
 # the app boots and tests pass, but the marquee feature breaks on a clean
-# install. Qwen2.5-VL landed in transformers 4.49.
+# install. Keep transformers aligned with the Qwen2_5_VLForConditionalGeneration
+# API used by repo/qwen_chapters.py.
 torch>=2.13,<2.14
 torchvision>=0.28,<0.29
 transformers>=5.5,<6
